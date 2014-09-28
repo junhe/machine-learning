@@ -273,7 +273,7 @@ class Reader:
 
             if line.lower().startswith(ATTRIBUTE):
                 space_separated = line.split(' ', 2)
-                name = space_separated[1]
+                name = space_separated[1].strip("'")
                 field_type_text = space_separated[2].strip()
 
                 fields.append(self._field_type(name, field_type_text))

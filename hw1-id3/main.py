@@ -62,7 +62,7 @@ def entropy(example_table):
 if __name__ == '__main__':
     fulltable = list(arff.load('./heart_test.arff'))
     print get_fieldnames(fulltable)
-    print get_column(fulltable, "'class'")
+    print get_column(fulltable, "class")
 
 
 
