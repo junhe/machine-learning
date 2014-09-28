@@ -84,7 +84,7 @@ def subset_equal(example_table, attr, value):
     "return a subset of rows in example_table"
     return [row for row in example_table if row[attr]==value]
 
-def information_gain(example_table, attr):
+def information_gain_nominal(example_table, attr):
     counttotal = nrows(example_table)
     Entropy_S = entropy(example_table)
 
@@ -106,6 +106,29 @@ def information_gain(example_table, attr):
           'freqs', freqs
     return gain
 
+def information_gain_numeric(example_table, attr):
+    # sort table
+    # find split candidates
+    # calculate the information gain of each candidates 
+    # (transform it to nominal to calculate)
+    # find the best one
+
+    # sort table
+    tablesorted = sorted(example_table, key=lambda k: k[attr]) 
+
+    # find split candidates
+    split_candidates = []
+    #value of this attribute and its set of corresponding classes
+    attrclasses = [] 
+    for i, row in enumerate(tablesorted):
+        curvalue = row[attr]
+        curclass = row['class']
+        if len(attrclasses) == 0 or attrclasses[-1]['value'] != curvalue:
+            attrclasses.append( {'value':curvalue,
+                                 'class':set([curclass])} )
+        else :
+            attrclasses[-1]['class'].add(curclass)
+    print attrclasses
 
 
 if __name__ == '__main__':
@@ -114,9 +137,9 @@ if __name__ == '__main__':
     #print get_column(fulltable, "class")
     #print entropy(fulltable)
     #pretty_print( subset_equal(fulltable, 'class', 'positive') )
-    information_gain(fulltable, 'sex')
-    print get_fieldtype(fulltable, 'class')
-    print get_fieldtype(fulltable, 'age')
-
+    #information_gain_nominal(fulltable, 'sex')
+    #print get_fieldtype(fulltable, 'class')
+    #print get_fieldtype(fulltable, 'age')
+    information_gain_numeric(fulltable, 'age')
 
 
