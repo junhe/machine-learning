@@ -2,6 +2,9 @@ import os,sys
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(scriptdir)
 import arff
+from collections import Counter
+import math
+import pprint
 
 # Let me begin by describing the program.
 # It first read an arff file into a list. Each element of the list
@@ -43,6 +46,11 @@ import arff
 #
 #
 
+def pretty_print(example_table):
+    for row in example_table:
+        itms = [str(x).ljust(15) for x in row]
+        line = ' '.join(itms)
+        print line
 
 def nrows(example_table):
     return len(example_table)
@@ -53,16 +61,62 @@ def get_fieldnames(example_table):
     else:
         return None
 
+def get_fieldtype(example_table, attrname):
+    if nrows(example_table) > 0 :
+        return example_table[0].fieldnumornom[attrname]
+    else:
+        return None
+
 def get_column(example_table, colname):
     return [row[colname] for row in example_table]
 
 def entropy(example_table):
     "example_table is a list, each element of which is a row"
+    classes = get_column(example_table, 'class')
+    cnter = Counter(classes)
+    total = sum(cnter.values())
+    assert total > 0
+    probs = [float(freq)/total for freq in cnter.values()]
+    items = [p*math.log(p,2) for p in probs]
+    return -sum(items)
+
+def subset_equal(example_table, attr, value):
+    "return a subset of rows in example_table"
+    return [row for row in example_table if row[attr]==value]
+
+def information_gain(example_table, attr):
+    counttotal = nrows(example_table)
+    Entropy_S = entropy(example_table)
+
+    attrcolumn = get_column(example_table, attr)
+    freqs = Counter(attrcolumn)
+    Sum_right = 0
+    for v in freqs.keys():
+        subtable = subset_equal(example_table, attr, v)
+        count_v = nrows(subtable)
+        Entropy_v = entropy(subtable)
+        Sum_right += (float(count_v)/float(counttotal)) + Entropy_v
+        print 'count_v',count_v, \
+              'Entropy_v', Entropy_v, \
+              'Sum_right', Sum_right
+    
+    gain = Entropy_S - Entropy_v
+    print gain
+    print 'totalcount', counttotal, \
+          'freqs', freqs
+    return gain
+
+
 
 if __name__ == '__main__':
     fulltable = list(arff.load('./heart_test.arff'))
     print get_fieldnames(fulltable)
-    print get_column(fulltable, "class")
+    #print get_column(fulltable, "class")
+    #print entropy(fulltable)
+    #pretty_print( subset_equal(fulltable, 'class', 'positive') )
+    information_gain(fulltable, 'sex')
+    print get_fieldtype(fulltable, 'class')
+    print get_fieldtype(fulltable, 'age')
 
 
 

@@ -78,7 +78,7 @@ def _str_remove_quotes(obj):
     return str(obj[1:-1])
 
 
-def GenerateRowBase(field_names):
+def GenerateRowBase(field_names, fieldnumornom):
     """
     Rows should behave like so:
         * list(row) should give the values in order
@@ -96,6 +96,7 @@ def GenerateRowBase(field_names):
             self._data.update(enumerate(self._values))
             
             self.fieldnames = field_names
+            self.fieldnumornom = fieldnumornom
         def __getattr__(self, key):
             if key in self._data:
                 return self._data[key]
@@ -184,6 +185,7 @@ class _ParsedNominal:
     '''Parses and validates the arff enum'''
     def __init__(self, name, type_text):
         self.name = name
+        self.numornom = 'nominal'
         self.type_text = type_text
         values_str = type_text.strip('{} ')
         self.enum = _csv_split(values_str)
@@ -199,6 +201,7 @@ class _ParsedNominal:
 class _SimpleType:
     def __init__(self, name, type_text):
         self.name = name
+        self.numornom = 'numeric'
         self.type = ARFF_TYPES[type_text]
 
     def parse(self, text):
@@ -217,7 +220,11 @@ class _RowParser:
     def __init__(self, fields):
         self.fields = fields
         #self.tuple = namedtuple('Row', [f.name for f in fields])
-        self.rowgen = GenerateRowBase([f.name for f in fields])
+        attrnames = [f.name for f in fields]
+        attrtypes = [f.numornom for f in fields]
+        fieldnumornom = dict(zip(attrnames, attrtypes))
+
+        self.rowgen = GenerateRowBase([f.name for f in fields], fieldnumornom)
 
     def parse(self, row):
         values = []
