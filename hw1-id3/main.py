@@ -132,17 +132,34 @@ def information_gain_nominal(example_table, attr):
 
 def information_gain_numeric(example_table, attr):
     split_dic = infogain_of_numeric_splits(example_table, attr)
-    
-    maxinfogain = -float('inf')
-    maxsplit = None
-    for split,infogain in split_dic.items():
-        if maxinfogain < infogain:
-            maxinfogain = infogain
-            maxsplit = split
+    print split_dic
+    splitlist = split_dic.keys()
+    splitlist.sort()
 
-    return {'type': 'numeric',
-            'split': maxsplit,
-            'infogain': maxinfogain}
+    maxvalue = max(split_dic.values())
+    maxs = {}
+    for k,v in split_dic.items():
+        if v == maxvalue:
+            maxs[k] = v
+
+    for split in splitlist:
+        if maxs.has_key(split):
+            return {'type':'numeric',
+                    'split':split,
+                    'infogain':maxs[split]}
+    print 'error in information_gain_numeric'
+    exit(1)
+
+    #maxinfogain = -float('inf')
+    #maxsplit = None
+    #for split,infogain in split_dic.items():
+        #if maxinfogain < infogain:
+            #maxinfogain = infogain
+            #maxsplit = split
+
+    #return {'type': 'numeric',
+            #'split': maxsplit,
+            #'infogain': maxinfogain}
 
 
 def infogain_of_numeric_splits(example_table, attr):
