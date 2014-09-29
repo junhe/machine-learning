@@ -243,7 +243,7 @@ def get_most_freq_item(dic):
 
     return mymax
 
-def id3(example_table, attributes, target_attr, m):
+def id3(example_table, attributes, target_attr, m, attr_order):
     print '--------attributes', attributes, '----target_attr',target_attr
     root = get_empty_node()
    
@@ -268,7 +268,16 @@ def id3(example_table, attributes, target_attr, m):
     infogains = []
     for attr in attributes:
         infogains.append( information_gain_general(example_table, attr) )
-    best_attr = max(infogains, key=lambda x: x['infogain'])
+    maxgainval = max(infogains, key=lambda x: x['infogain'])['infogain']
+    maxgains = {}
+    for gain in infogains:
+        if gain['infogain'] == maxgainval:
+            maxgains[gain['attrname']]=gain
+    pprint.pprint(maxgains)
+    for attr in attr_order:
+        if maxgains.has_key(attr):
+            best_attr = maxgains[attr]
+            break
     print 'best:', best_attr
     
     # STOP criteria (iii) no feature has positive information gain
@@ -332,7 +341,7 @@ def id3(example_table, attributes, target_attr, m):
             #print 'attrname',root['decision_attr']['attrname']
             #print 'attrs', attributes
             #print 'subattributes',subattributes
-            node = id3(subexample, subattributes, 'class', m)
+            node = id3(subexample, subattributes, 'class', m, attr_order)
             root['children'][branchname] = node
     return root
 
@@ -380,25 +389,13 @@ def get_count_str(classcnt, levels):
 if __name__ == '__main__':
     fulltable = list(arff.load('./heart_train.arff'))
     #fulltable = list(arff.load('./diabetes_train.arff'))
-    attributes = get_fieldnames(fulltable)
-    if 'class' in attributes:
-        attributes.remove('class')
-    #print get_column(fulltable, "class")
-    #print entropy(fulltable)
-    #pretty_print( subset_equal(fulltable, 'class', 'positive') )
-    #information_gain_nominal(fulltable, 'sex')
-    #print get_fieldtype(fulltable, 'class')
-    #print get_fieldtype(fulltable, 'age')
-    #information_gain_numeric(fulltable, 'age')
-    #information_gain_on_numeric_split(fulltable, 'age', 55.5)
-    #information_gain_on_numeric_split(fulltable, 'age', 60.5)
-    #information_gain_on_numeric_split(fulltable, 'age', 40.5)
-    #information_gain_numeric(fulltable, 'age')
-    #print information_gain_numeric(fulltable, 'age')
-    tree = id3(fulltable, attributes, 'class', 20)
-    #tree = id3(fulltable, ['ca', 'thal', 'thalach'], 'class')
+    fieldnames = get_fieldnames(fulltable)
+    attributes = [x for x in fieldnames if x != 'class']
+    
+    tree = id3(fulltable, attributes, 'class', 20, attr_order=attributes)
     #pprint.pprint(tree)
     levelinfo = fulltable[0].levelinfo
+    print attributes
     print_tree(tree, 0, levelinfo)
     #print levelinfo
 

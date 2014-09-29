@@ -101,7 +101,11 @@ def GenerateRowBase(field_names, fieldnumornom, fieldinfo):
             for mytype in fieldinfo:
                 d[mytype.name] = mytype.get_levels()
             self.levelinfo = d
-            
+
+            #attrlist = []
+            #for mytype in fieldinfo:
+                #attrlist.append(mytype.name)
+            #self.attrlist = attrlist
             self.fieldnames = field_names
             self.fieldnumornom = fieldnumornom
         def __getattr__(self, key):
