@@ -324,6 +324,25 @@ def id3(example_table, attributes, target_attr, m):
 
 
 
+def print_tree(node, level):
+    for branchname, subnode in node['children'].items():
+        sys.stdout.write( ''.join(['|\t']*level) )
+        if node['decision_attr']['type'] == 'nominal':
+            sep = '='
+        else :
+            sep = ''
+        print node['decision_attr']['attrname'] + sep, branchname,
+
+        if len(subnode['children']) == 0 :
+            # the subnode is a leaf, we print the label rigth here
+            print ': '+subnode['label']
+        else :
+            print  #start a new line and print the subtree there
+            print_tree(subnode, level+1)
+    return
+        
+
+
 
         
             
@@ -347,6 +366,7 @@ if __name__ == '__main__':
     #print information_gain_numeric(fulltable, 'age')
     tree = id3(fulltable, attributes, 'class', 20)
     #tree = id3(fulltable, ['ca', 'thal', 'thalach'], 'class')
-    pprint.pprint(tree)
+    #pprint.pprint(tree)
+    print_tree(tree, 0)
 
 
