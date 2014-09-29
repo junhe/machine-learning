@@ -118,6 +118,13 @@ def GenerateRowBase(field_names, fieldnumornom):
         def get_fieldnames(self):
             return self.fieldnames
 
+        def add_attr(self, attr, value):
+            "this only add the attr so row[attr] can be used, not row[i]"
+            self._data[attr] = value
+
+        def del_attr(self, attr):
+            del self._data[attr]
+
     return Row
 
 ARFF_TYPES = {

@@ -84,6 +84,20 @@ def subset_equal(example_table, attr, value):
     "return a subset of rows in example_table"
     return [row for row in example_table if row[attr]==value]
 
+def information_gain_general(example_table, attr):
+    fieldtype = get_fieldtype(example_table, attr)
+    if fieldtype == 'numeric':
+        infogain = information_gain_numeric(example_table, attr)
+        infogain['attrname'] = attr
+        return infogain
+    else :
+        infogain = information_gain_nominal(example_table, attr)
+        d = {'type':'nominal',
+             'infogain':infogain,
+             'attrname':attr}
+        return d
+
+
 def information_gain_nominal(example_table, attr):
     counttotal = nrows(example_table)
     Entropy_S = entropy(example_table)
@@ -96,17 +110,45 @@ def information_gain_nominal(example_table, attr):
         count_v = nrows(subtable)
         Entropy_v = entropy(subtable)
         Sum_right += (float(count_v)/float(counttotal)) + Entropy_v
-        print 'count_v',count_v, \
-              'Entropy_v', Entropy_v, \
-              'Sum_right', Sum_right
+        #print 'count_v',count_v, \
+              #'Entropy_v', Entropy_v, \
+              #'Sum_right', Sum_right
     
     gain = Entropy_S - Entropy_v
-    print gain
-    print 'totalcount', counttotal, \
-          'freqs', freqs
+    #print gain
+    #print 'totalcount', counttotal, \
+          #'freqs', freqs
     return gain
 
 def information_gain_numeric(example_table, attr):
+    split_dic = infogain_of_numeric_splits(example_table, attr)
+    
+    maxinfogain = -float('inf')
+    maxsplit = None
+    for split,infogain in split_dic.items():
+        if maxinfogain < infogain:
+            maxinfogain = infogain
+            maxsplit = split
+
+    return {'type': 'numeric',
+            'split': maxsplit,
+            'infogain': maxinfogain}
+
+
+def infogain_of_numeric_splits(example_table, attr):
+    "it return {split:infogain, ..}"
+    split_candidates = get_split_candidates(example_table, attr)
+
+    split_dic = {}
+    for split in split_candidates:
+        infogain = information_gain_on_numeric_split(example_table, 
+                                                      attr,
+                                                      split)
+        split_dic[split] = infogain
+
+    return split_dic
+
+def get_split_candidates(example_table, attr):
     # sort table
     # find split candidates
     # calculate the information gain of each candidates 
@@ -128,18 +170,99 @@ def information_gain_numeric(example_table, attr):
                                  'class':set([curclass])} )
         else :
             attrclasses[-1]['class'].add(curclass)
-    print attrclasses
+    #pprint.pprint( attrclasses )
+    for i, item in enumerate(attrclasses):
+        if i == 0 :
+            continue
+        # cases needs split
+        # v_i-1 and v_i have a pair of different 'class'
+        # if a set has more than one item, it must has a item
+        # that is different to an item in another set
+        if attrclasses[i]['class'] != attrclasses[i-1]['class'] or \
+            len(attrclasses[i-1]['class']) > 1 or \
+            len(attrclasses[i]['class']) > 1 :
+            # this is a candidate
+            #print 'this is a candidate----'
+            #print attrclasses[i-1]
+            #print attrclasses[i]
+            candi = (attrclasses[i]['value'] + attrclasses[i-1]['value'])/2
+            split_candidates.append(candi)
+        #else :
+            #print 'this is not a candidate----'
+            #print attrclasses[i-1]
+            #print attrclasses[i]
+    
+    return split_candidates
+
+def information_gain_on_numeric_split(example_table, attr, split):
+    # add a new nominal attribute according to the split
+    # use the implemented information_gain for actual calculation
+    attrname = '<= ' + str(split) 
+    for row in example_table:
+        if row[attr] <= split:
+            row.add_attr(attrname, 'true')
+        else :
+            row.add_attr(attrname, 'false')
+    infogain = information_gain_nominal(example_table, attrname)
+
+    for row in example_table:
+        row.del_attr(attrname)
+
+    return infogain
 
 
+def get_empty_node():
+    nd = {'example_table': None,
+          'decision_attr': None,
+          'class_count'  : None, #[positive, negative]
+          'label'        : None,
+          'children'     : None} #{'branch1': node, ..}
+    return nd
+
+def get_most_freq_item(dic):
+    mymax = {'key': None,
+             'value': -float('inf')}
+    for k,v in dic.items():
+        if v > mymax['value']:
+            mymax['key'] = k
+            mymax['value'] = v
+
+    return mymax
+
+def id3(example_table, attributes, target_attr):
+    root = get_empty_node()
+   
+    classes = get_column(example_table, 'class')
+    classcnt = Counter(classes)
+    print classcnt
+    if len(classcnt) == 1 :
+        root['label'] = classcnt.keys()[0]
+        return root 
+    if len(attributes) == 0 :
+        root['label'] = get_most_freq_item(classcnt)['key']
+        return root
+        
+    # find the best attribute that classifies this example_table
+    for attr in attributes:
+        print information_gain_general(example_table, attr)
+    #print information_gain_general(example_table, 'age')
+        
+            
 if __name__ == '__main__':
     fulltable = list(arff.load('./heart_test.arff'))
-    print get_fieldnames(fulltable)
+    attributes = get_fieldnames(fulltable)
     #print get_column(fulltable, "class")
     #print entropy(fulltable)
     #pretty_print( subset_equal(fulltable, 'class', 'positive') )
     #information_gain_nominal(fulltable, 'sex')
     #print get_fieldtype(fulltable, 'class')
     #print get_fieldtype(fulltable, 'age')
-    information_gain_numeric(fulltable, 'age')
+    #information_gain_numeric(fulltable, 'age')
+    #information_gain_on_numeric_split(fulltable, 'age', 55.5)
+    #information_gain_on_numeric_split(fulltable, 'age', 60.5)
+    #information_gain_on_numeric_split(fulltable, 'age', 40.5)
+    #information_gain_numeric(fulltable, 'age')
+    #print information_gain_numeric(fulltable, 'age')
+    id3(fulltable, attributes, 'class')
 
 
