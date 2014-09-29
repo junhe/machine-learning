@@ -309,11 +309,11 @@ def id3(example_table, attributes, target_attr, m):
         split = root['decision_attr']['split']
         attr = root['decision_attr']['attrname']
         smallerset = [row for row in example_table if row[attr] <= split]
-        branchname = '<= '+str(split)
+        branchname = '<= '+"{0:.6f}".format(split)
         sublist.append({branchname: smallerset})
 
         largerset = [row for row in example_table if row[attr] > split]
-        branchname = '> '+str(split)
+        branchname = '> '+"{0:.6f}".format(split)
         sublist.append({branchname: largerset})
 
     for sub in sublist:
@@ -338,27 +338,44 @@ def id3(example_table, attributes, target_attr, m):
 
 
 
-def print_tree(node, level):
-    for branchname, subnode in node['children'].items():
+def print_tree(node, level, levelinfo):
+    if node['decision_attr']['type'] == 'nominal':
+        levels = levelinfo[node['decision_attr']['attrname']]
+    else :
+        levels = node['children'].keys()
+        levels.sort()
+
+    for branchname in levels:
+        subnode = node['children'][branchname]
         sys.stdout.write( ''.join(['|\t']*level) )
         if node['decision_attr']['type'] == 'nominal':
-            sep = '='
+            sep = ' = '
         else :
-            sep = ''
-        print node['decision_attr']['attrname'] + sep, branchname,
+            sep = ' '
+        sys.stdout.write( node['decision_attr']['attrname'] + sep +
+                branchname + ' ' +
+                get_count_str(subnode['class_count'], levelinfo['class']))
 
         if len(subnode['children']) == 0 :
             # the subnode is a leaf, we print the label rigth here
             print ': '+subnode['label']
         else :
             print  #start a new line and print the subtree there
-            print_tree(subnode, level+1)
+            print_tree(subnode, level+1, levelinfo)
     return
         
-
-
-
-        
+def get_count_str(classcnt, levels):
+    counts = []
+    # [negative count, positive count]
+    for level in levels:
+        if classcnt.has_key(level):
+            counts.append(classcnt[level])
+        else :
+            counts.append(0)
+    
+    counts = [str(x) for x in counts]
+    retstr = '['+' '.join(counts)+']'
+    return retstr
             
 if __name__ == '__main__':
     fulltable = list(arff.load('./heart_train.arff'))
@@ -381,7 +398,8 @@ if __name__ == '__main__':
     tree = id3(fulltable, attributes, 'class', 20)
     #tree = id3(fulltable, ['ca', 'thal', 'thalach'], 'class')
     #pprint.pprint(tree)
-    print_tree(tree, 0)
-    print fulltable[0].levelinfo
+    levelinfo = fulltable[0].levelinfo
+    print_tree(tree, 0, levelinfo)
+    #print levelinfo
 
 
