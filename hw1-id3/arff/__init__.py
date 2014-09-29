@@ -78,7 +78,7 @@ def _str_remove_quotes(obj):
     return str(obj[1:-1])
 
 
-def GenerateRowBase(field_names, fieldnumornom):
+def GenerateRowBase(field_names, fieldnumornom, fieldinfo):
     """
     Rows should behave like so:
         * list(row) should give the values in order
@@ -94,6 +94,13 @@ def GenerateRowBase(field_names, fieldnumornom):
             self._data = dict(zip(field_names, self._values))
             # numbered order access
             self._data.update(enumerate(self._values))
+            
+            #self.fieldinfo = fieldinfo
+            # parse and get level info
+            d = {}
+            for mytype in fieldinfo:
+                d[mytype.name] = mytype.get_levels()
+            self.levelinfo = d
             
             self.fieldnames = field_names
             self.fieldnumornom = fieldnumornom
@@ -203,6 +210,8 @@ class _ParsedNominal:
             return text
         else:
             raise ValueError("'%s' is not in {%s}" % (text, self.enum))
+    def get_levels(self):
+        return self.enum
 
 
 class _SimpleType:
@@ -213,6 +222,9 @@ class _SimpleType:
 
     def parse(self, text):
         return self.type(text)
+
+    def get_levels(self):
+        return None
 
 
 def _parse_types(row, fields):
@@ -231,7 +243,9 @@ class _RowParser:
         attrtypes = [f.numornom for f in fields]
         fieldnumornom = dict(zip(attrnames, attrtypes))
 
-        self.rowgen = GenerateRowBase([f.name for f in fields], fieldnumornom)
+        self.rowgen = GenerateRowBase([f.name for f in fields], 
+                                       fieldnumornom,
+                                       fields)
 
     def parse(self, row):
         values = []

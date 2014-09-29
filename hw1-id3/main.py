@@ -382,5 +382,6 @@ if __name__ == '__main__':
     #tree = id3(fulltable, ['ca', 'thal', 'thalach'], 'class')
     #pprint.pprint(tree)
     print_tree(tree, 0)
+    print fulltable[0].levelinfo
 
 
