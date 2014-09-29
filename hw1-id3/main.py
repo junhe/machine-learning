@@ -239,17 +239,24 @@ def get_most_freq_item(dic):
 
     return mymax
 
-def id3(example_table, attributes, target_attr):
+def id3(example_table, attributes, target_attr, m):
     print '--------attributes', attributes, '----target_attr',target_attr
     root = get_empty_node()
    
     classes = get_column(example_table, 'class')
     classcnt = Counter(classes)
     #print classcnt
+
+    # STOP criteria (i) all the training instances reaching
+    # the node belong to the same class
     if len(classcnt) == 1 :
+        root['class_count'] = classcnt
         root['label'] = classcnt.keys()[0]
         return root 
-    if len(attributes) == 0 :
+    # STOP criteria (ii) there are fewer than m training instances
+    # reaching the node
+    if len(attributes) == 0 or nrows(example_table) < m :
+        root['class_count'] = classcnt
         root['label'] = get_most_freq_item(classcnt)['key']
         return root
         
@@ -259,15 +266,16 @@ def id3(example_table, attributes, target_attr):
         infogains.append( information_gain_general(example_table, attr) )
     best_attr = max(infogains, key=lambda x: x['infogain'])
     print 'best:', best_attr
-    #print information_gain_general(example_table, 'thal')
-    #print information_gain_general(example_table, 'ca')
-    #print information_gain_general(example_table, 'exang')
+    
+    # STOP criteria (iii) no feature has positive information gain
+    if best_attr['infogain'] <= 0 :
+        root['class_count'] = classcnt
+        root['label'] = get_most_freq_item(classcnt)['key']
+        return root
+
 
     root['decision_attr'] = best_attr
     root['class_count'] = classcnt
-    #root['example_table'] = example_table
-    valueset = get_column_uniques(example_table, 
-                                  root['decision_attr']['attrname'])
     
     print root
     assert root['decision_attr']['type'] in ['numeric', 'nominal']
@@ -275,6 +283,8 @@ def id3(example_table, attributes, target_attr):
     # get subsets
     sublist = []
     if root['decision_attr']['type'] == 'nominal':
+        valueset = get_column_uniques(example_table, 
+                                  root['decision_attr']['attrname'])
         for v in valueset:
             subexample = subset_equal(example_table, 
                                       root['decision_attr']['attrname'],   
@@ -299,7 +309,7 @@ def id3(example_table, attributes, target_attr):
             subcounter = Counter(get_column(subexample, 'class'))
             commontarget = max(subcounter, key=lambda x:subcounter[x[0]])
             leaf = get_empty_node()
-            leaf['class_coun'] = subcounter
+            leaf['class_count'] = subcounter
             leaf['label']      = commontarget
             root['children'][branchname] = leaf
         else :
@@ -308,7 +318,7 @@ def id3(example_table, attributes, target_attr):
             #print 'attrname',root['decision_attr']['attrname']
             #print 'attrs', attributes
             #print 'subattributes',subattributes
-            node = id3(subexample, subattributes, 'class')
+            node = id3(subexample, subattributes, 'class', m)
             root['children'][branchname] = node
     return root
 
@@ -335,7 +345,7 @@ if __name__ == '__main__':
     #information_gain_on_numeric_split(fulltable, 'age', 40.5)
     #information_gain_numeric(fulltable, 'age')
     #print information_gain_numeric(fulltable, 'age')
-    tree = id3(fulltable, attributes, 'class')
+    tree = id3(fulltable, attributes, 'class', 20)
     #tree = id3(fulltable, ['ca', 'thal', 'thalach'], 'class')
     pprint.pprint(tree)
 
