@@ -107,6 +107,10 @@ def information_gain_nominal(example_table, attr):
 
     attrcolumn = get_column(example_table, attr)
     freqs = Counter(attrcolumn)
+    if len(freqs) == 1 :
+        # no candidate split
+        return None
+
     Sum_right = 0
     #print freqs.keys()
     for v in freqs.keys():
@@ -273,11 +277,21 @@ def id3(example_table, attributes, target_attr, m):
         root['label'] = get_most_freq_item(classcnt)['key']
         return root
 
+    # STOP criteria (iv) there are no more remaining candidate splits
+    # at the node. i.e., all attribute has only one value
+    has_over_one = False
+    for gain in infogains:
+        if (gain['type'] == 'nominal' and gain['infogain'] != None) or \
+           (gain['type'] == 'numeric' and gain['split'] != None):
+            has_over_one = True
+    if has_over_one == False:
+        root['class_count'] = classcnt
+        root['label'] = get_most_freq_item(classcnt)['key']
+        return 
 
     root['decision_attr'] = best_attr
     root['class_count'] = classcnt
     
-    print root
     assert root['decision_attr']['type'] in ['numeric', 'nominal']
     
     # get subsets
