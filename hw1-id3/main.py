@@ -233,17 +233,31 @@ def get_empty_node():
           'children'     : {}} #{'branch1': node, ..}
     return nd
 
-def get_most_freq_item(dic):
-    mymax = {'key': None,
-             'value': -float('inf')}
+def get_most_freq_item(dic, classlevels):
+    lst = []
     for k,v in dic.items():
-        if v > mymax['value']:
-            mymax['key'] = k
-            mymax['value'] = v
+        lst.append({'key':k, 'value':v})
+    maxitem = max(lst, key=lambda k:k['value'])
+    maxs = {}
+    for item in lst:
+        if item['value'] == maxitem['value']:
+            maxs[item['key']] = item
 
-    return mymax
+    for level in classlevels:
+        if maxs.has_key(level):
+            return maxs[level]
+    
 
-def id3(example_table, attributes, target_attr, m, attr_order):
+    #mymax = {'key': None,
+             #'value': -float('inf')}
+    #for k,v in dic.items():
+        #if v > mymax['value']:
+            #mymax['key'] = k
+            #mymax['value'] = v
+
+    #return mymax
+
+def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
     print '--------attributes', attributes, '----target_attr',target_attr
     root = get_empty_node()
    
@@ -261,7 +275,7 @@ def id3(example_table, attributes, target_attr, m, attr_order):
     # reaching the node
     if len(attributes) == 0 or nrows(example_table) < m :
         root['class_count'] = classcnt
-        root['label'] = get_most_freq_item(classcnt)['key']
+        root['label'] = get_most_freq_item(classcnt, levelinfo['class'])['key']
         return root
         
     # find the best attribute that classifies this example_table
@@ -283,7 +297,7 @@ def id3(example_table, attributes, target_attr, m, attr_order):
     # STOP criteria (iii) no feature has positive information gain
     if best_attr['infogain'] <= 0 :
         root['class_count'] = classcnt
-        root['label'] = get_most_freq_item(classcnt)['key']
+        root['label'] = get_most_freq_item(classcnt, levelinfo['class'])['key']
         return root
 
     # STOP criteria (iv) there are no more remaining candidate splits
@@ -295,7 +309,7 @@ def id3(example_table, attributes, target_attr, m, attr_order):
             has_over_one = True
     if has_over_one == False:
         root['class_count'] = classcnt
-        root['label'] = get_most_freq_item(classcnt)['key']
+        root['label'] = get_most_freq_item(classcnt, levelinfo['class'])['key']
         return 
 
     root['decision_attr'] = best_attr
@@ -341,7 +355,8 @@ def id3(example_table, attributes, target_attr, m, attr_order):
             #print 'attrname',root['decision_attr']['attrname']
             #print 'attrs', attributes
             #print 'subattributes',subattributes
-            node = id3(subexample, subattributes, 'class', m, attr_order)
+            node = id3(subexample, subattributes, 'class', m, 
+                       attr_order, levelinfo)
             root['children'][branchname] = node
     return root
 
@@ -391,10 +406,11 @@ if __name__ == '__main__':
     #fulltable = list(arff.load('./diabetes_train.arff'))
     fieldnames = get_fieldnames(fulltable)
     attributes = [x for x in fieldnames if x != 'class']
-    
-    tree = id3(fulltable, attributes, 'class', 20, attr_order=attributes)
-    #pprint.pprint(tree)
     levelinfo = fulltable[0].levelinfo
+    
+    tree = id3(fulltable, attributes, 'class', 20, attr_order=attributes,
+                  levelinfo=levelinfo)
+    #pprint.pprint(tree)
     print attributes
     print_tree(tree, 0, levelinfo)
     #print levelinfo
