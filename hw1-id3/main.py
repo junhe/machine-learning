@@ -216,13 +216,17 @@ def information_gain_on_numeric_split(example_table, attr, split):
 
     return infogain
 
+def get_column_uniques(example_table, colname):
+    col = get_column(example_table, colname)
+    colset = set(col)
+    return colset
 
 def get_empty_node():
     nd = {'example_table': None,
           'decision_attr': None,
           'class_count'  : None, #[positive, negative]
           'label'        : None,
-          'children'     : None} #{'branch1': node, ..}
+          'children'     : {}} #{'branch1': node, ..}
     return nd
 
 def get_most_freq_item(dic):
@@ -236,6 +240,7 @@ def get_most_freq_item(dic):
     return mymax
 
 def id3(example_table, attributes, target_attr):
+    print '--------attributes', attributes, '----target_attr',target_attr
     root = get_empty_node()
    
     classes = get_column(example_table, 'class')
@@ -249,11 +254,67 @@ def id3(example_table, attributes, target_attr):
         return root
         
     # find the best attribute that classifies this example_table
+    infogains = []
     for attr in attributes:
-        print information_gain_general(example_table, attr)
+        infogains.append( information_gain_general(example_table, attr) )
+    best_attr = max(infogains, key=lambda x: x['infogain'])
+    print 'best:', best_attr
     #print information_gain_general(example_table, 'thal')
     #print information_gain_general(example_table, 'ca')
     #print information_gain_general(example_table, 'exang')
+
+    root['decision_attr'] = best_attr
+    root['class_count'] = classcnt
+    #root['example_table'] = example_table
+    valueset = get_column_uniques(example_table, 
+                                  root['decision_attr']['attrname'])
+    
+    print root
+    assert root['decision_attr']['type'] in ['numeric', 'nominal']
+    
+    # get subsets
+    sublist = []
+    if root['decision_attr']['type'] == 'nominal':
+        for v in valueset:
+            subexample = subset_equal(example_table, 
+                                      root['decision_attr']['attrname'],   
+                                      v)
+            sublist.append( {v: subexample} )
+    else :
+        # get subset
+        split = root['decision_attr']['split']
+        attr = root['decision_attr']['attrname']
+        smallerset = [row for row in example_table if row[attr] <= split]
+        branchname = '<= '+str(split)
+        sublist.append({branchname: smallerset})
+
+        largerset = [row for row in example_table if row[attr] > split]
+        branchname = '> '+str(split)
+        sublist.append({branchname: largerset})
+
+    for sub in sublist:
+        branchname = sub.keys()[0]
+        subexample = sub[branchname]
+        if len(subexample) == 0 :
+            subcounter = Counter(get_column(subexample, 'class'))
+            commontarget = max(subcounter, key=lambda x:subcounter[x[0]])
+            leaf = get_empty_node()
+            leaf['class_coun'] = subcounter
+            leaf['label']      = commontarget
+            root['children'][branchname] = leaf
+        else :
+            subattributes = [attr for attr in attributes \
+                    if attr != root['decision_attr']['attrname']]
+            #print 'attrname',root['decision_attr']['attrname']
+            #print 'attrs', attributes
+            #print 'subattributes',subattributes
+            node = id3(subexample, subattributes, 'class')
+            root['children'][branchname] = node
+    return root
+
+
+
+
         
             
 if __name__ == '__main__':
@@ -274,6 +335,8 @@ if __name__ == '__main__':
     #information_gain_on_numeric_split(fulltable, 'age', 40.5)
     #information_gain_numeric(fulltable, 'age')
     #print information_gain_numeric(fulltable, 'age')
-    id3(fulltable, attributes, 'class')
+    tree = id3(fulltable, attributes, 'class')
+    #tree = id3(fulltable, ['ca', 'thal', 'thalach'], 'class')
+    pprint.pprint(tree)
 
 
