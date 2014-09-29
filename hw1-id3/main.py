@@ -74,6 +74,7 @@ def entropy(example_table):
     "example_table is a list, each element of which is a row"
     classes = get_column(example_table, 'class')
     cnter = Counter(classes)
+    #print cnter
     total = sum(cnter.values())
     assert total > 0
     probs = [float(freq)/total for freq in cnter.values()]
@@ -99,23 +100,28 @@ def information_gain_general(example_table, attr):
 
 
 def information_gain_nominal(example_table, attr):
+    #print '-------------------', attr
     counttotal = nrows(example_table)
     Entropy_S = entropy(example_table)
+    #print 'Entropy_S', Entropy_S
 
     attrcolumn = get_column(example_table, attr)
     freqs = Counter(attrcolumn)
     Sum_right = 0
+    #print freqs.keys()
     for v in freqs.keys():
+        #print v
         subtable = subset_equal(example_table, attr, v)
         count_v = nrows(subtable)
         Entropy_v = entropy(subtable)
-        Sum_right += (float(count_v)/float(counttotal)) + Entropy_v
+        Sum_right += (float(count_v)/float(counttotal)) * Entropy_v
         #print 'count_v',count_v, \
+              #'counttotal', counttotal, \
               #'Entropy_v', Entropy_v, \
               #'Sum_right', Sum_right
     
-    gain = Entropy_S - Entropy_v
-    #print gain
+    gain = Entropy_S - Sum_right
+    #print 'gain', gain
     #print 'totalcount', counttotal, \
           #'freqs', freqs
     return gain
@@ -234,7 +240,7 @@ def id3(example_table, attributes, target_attr):
    
     classes = get_column(example_table, 'class')
     classcnt = Counter(classes)
-    print classcnt
+    #print classcnt
     if len(classcnt) == 1 :
         root['label'] = classcnt.keys()[0]
         return root 
@@ -245,12 +251,17 @@ def id3(example_table, attributes, target_attr):
     # find the best attribute that classifies this example_table
     for attr in attributes:
         print information_gain_general(example_table, attr)
-    #print information_gain_general(example_table, 'age')
+    #print information_gain_general(example_table, 'thal')
+    #print information_gain_general(example_table, 'ca')
+    #print information_gain_general(example_table, 'exang')
         
             
 if __name__ == '__main__':
-    fulltable = list(arff.load('./heart_test.arff'))
+    fulltable = list(arff.load('./heart_train.arff'))
+    #fulltable = list(arff.load('./diabetes_train.arff'))
     attributes = get_fieldnames(fulltable)
+    if 'class' in attributes:
+        attributes.remove('class')
     #print get_column(fulltable, "class")
     #print entropy(fulltable)
     #pretty_print( subset_equal(fulltable, 'class', 'positive') )
