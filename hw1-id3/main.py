@@ -142,7 +142,7 @@ def information_gain_nominal(example_table, attr):
 
 def information_gain_numeric(example_table, attr):
     split_dic = infogain_of_numeric_splits(example_table, attr)
-
+    
     if len(split_dic) == 0 :
         return {'type': 'numeric',
                 'split': None,
@@ -316,6 +316,8 @@ def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
     infogains = []
     for attr in attributes:
         infogains.append( information_gain_general(example_table, attr) )
+    #if max(get_column(example_table,'chol')) <= 233 :
+        #print infogains
     maxgainval = max(infogains, key=lambda x: x['infogain'])['infogain']
     maxgains = {}
     for gain in infogains:
@@ -393,7 +395,8 @@ def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
             root['children'][branchname] = leaf
         else :
             subattributes = [attr for attr in attributes \
-                    if attr != root['decision_attr']['attrname']]
+                    if not (root['decision_attr']['type'] == 'nominal' and  
+                    attr == root['decision_attr']['attrname'])]
             #print 'attrname',root['decision_attr']['attrname']
             #print 'attrs', attributes
             #print 'subattributes',subattributes
@@ -454,6 +457,15 @@ if __name__ == '__main__':
     g_levelinfo = levelinfo
     g_attributes = [x for x in fieldnames if x != 'class'] 
 
+    # for debug
+    #fulltable = [row for row in fulltable \
+                    #if row['thal'] == 'reversable_defect' and \
+                       #row['cp']   == 'non_anginal' and \
+                       #row['oldpeak'] < 1.9 and \
+                       #row['trestbps'] > 122.5 and \
+                       #row['chol'] <= 232.5]
+    #pretty_print(fulltable)
+    
     tree = id3(fulltable, attributes, 'class', 4, attr_order=attributes,
                   levelinfo=levelinfo)
     #pprint.pprint(tree)
