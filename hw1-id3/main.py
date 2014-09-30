@@ -560,13 +560,14 @@ if __name__ == '__main__':
     if is_print_mystats == True :
         stats['m'] = m
         stats['trainratio'] = trainratio
+        stats['dataset'] = datafile
         #print stats
-        header = ['trainratio', 'm', 'goodprediction', 'total']
+        header = ['trainratio', 'm', 'goodprediction', 'total', 'dataset']
         values = [stats[x] for x in header]
-        values = [str(x).ljust(20) for x in values]
+        values = [str(x).ljust(25) for x in values]
         
-        header = [x.ljust(20) for x in header]
-        print ' '.join(header)
-        print ' '.join(values)
+        header = [x.ljust(25) for x in header]
+        print ' '.join(header) + ' HEADERLINEMARK'.ljust(25)
+        print ' '.join(values) + ' DATALINEMARK'.ljust(25) 
 
 
