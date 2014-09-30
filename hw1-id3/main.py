@@ -451,12 +451,13 @@ if __name__ == '__main__':
 
     argv = sys.argv
 
-    if len(argv) != 3 :
-        print 'Usage: python', argv[0], 'datafile m'
+    if len(argv) != 4 :
+        print 'Usage: python', argv[0], '<train-set-file> <test-set-file> m'
         exit(1)
 
     datafile = argv[1]
-    m = int(argv[2])
+    testfile = argv[2]
+    m = int(argv[3])
 
     fulltable = list(arff.load(datafile))
     fieldnames = get_fieldnames(fulltable)
