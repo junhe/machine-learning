@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 train-file test-file m" >&2
+    exit 1
+fi
+
+
+SRC_DIR=$(cd "$(dirname "$0")"; pwd)
+#echo $SRC_DIR
+python ${SRC_DIR}/main.py $1 $2 $3 1 1 1 1 0
