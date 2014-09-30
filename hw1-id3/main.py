@@ -5,6 +5,7 @@ import arff
 from collections import Counter
 import math
 import pprint
+import random
 
 # Let me begin by describing the program.
 # It first read an arff file into a list. Each element of the list
@@ -492,28 +493,46 @@ def prediction_stats(table):
         n += 1
         if row['class'] == row['predicted_class']:
             goodprediction += 1
-    statstr = 'correctly classified: ' + str(goodprediction) + \
-            ' total instances: ' + str(n)
+    statstr = 'correctly_classified: ' + str(goodprediction) + ','\
+            ' total_instances: ' + str(n)
     d = {'total':n,
          'goodprediction':goodprediction,
          'statstr':statstr}
     return d
 
+def get_proportion_sample(table, ratio):
+    if ratio == 1 :
+        return table
+    else :
+        n = nrows(table)
+        nsample = int(n*ratio)
+        return random.sample(table, nsample)
 
 if __name__ == '__main__':
     global g_levelinfo, g_attributes
 
     argv = sys.argv
 
-    if len(argv) != 4 :
-        print 'Usage: python', argv[0], '<train-set-file> <test-set-file> m'
+    if len(argv) != 9 :
+        print 'Usage: python', argv[0], \
+                '<train-set-file> <test-set-file> m <train-ratio> ' \
+                '<print-dt[0|1]> <print-prediction[0|1]> ' \
+                '<print-prediction-stats[0|1]> '\
+                '<print-mystats>'
         exit(1)
 
     datafile = argv[1]
     testfile = argv[2]
     m = int(argv[3])
+    trainratio = float(argv[4])
+    is_print_dt = bool(int(argv[5]))
+    is_print_prediction = bool(int(argv[6]))
+    is_print_prediction_stats = bool(int(argv[7]))
+    is_print_mystats = bool(int(argv[8]))
 
     fulltable = list(arff.load(datafile))
+    fulltable = get_proportion_sample(fulltable, trainratio)
+
     testtable = list(arff.load(testfile))
     fieldnames = get_fieldnames(fulltable)
     attributes = [x for x in fieldnames if x != 'class']
@@ -524,15 +543,30 @@ if __name__ == '__main__':
     tree = id3(fulltable, attributes, 'class', m, 
                attr_order =attributes,
                levelinfo  =levelinfo)
-    print
-    print_tree(tree, 0, levelinfo)
 
-    #print go_deep(tree, testtable[0])
-    #smalltable = [testtable[i] for i in range(10)]
-    #predict_a_table(tree, smalltable)
-    #pretty_print(smalltable)
+    if is_print_dt == True :
+        print
+        print_tree(tree, 0, levelinfo)
+
     predict_a_table(tree, testtable)
-    pretty_print(testtable)
-    print prediction_stats(testtable)['statstr']
+
+    if is_print_prediction == True :
+        pretty_print(testtable)
+
+    stats = prediction_stats(testtable)
+    if is_print_prediction_stats == True:
+        print stats['statstr']
+
+    if is_print_mystats == True :
+        stats['m'] = m
+        stats['trainratio'] = trainratio
+        #print stats
+        header = ['trainratio', 'm', 'goodprediction', 'total']
+        values = [stats[x] for x in header]
+        values = [str(x).ljust(20) for x in values]
+        
+        header = [x.ljust(20) for x in header]
+        print ' '.join(header)
+        print ' '.join(values)
 
 
