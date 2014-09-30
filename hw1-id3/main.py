@@ -511,8 +511,10 @@ if __name__ == '__main__':
     print_tree(tree, 0, levelinfo)
 
     #print go_deep(tree, testtable[0])
-    smalltable = [testtable[i] for i in range(10)]
-    predict_a_table(tree, smalltable)
-    pretty_print(smalltable)
+    #smalltable = [testtable[i] for i in range(10)]
+    #predict_a_table(tree, smalltable)
+    #pretty_print(smalltable)
+    predict_a_table(tree, testtable)
+    pretty_print(testtable)
 
 
