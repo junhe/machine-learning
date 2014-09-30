@@ -446,6 +446,37 @@ def get_count_str(classcnt, levels):
     retstr = '['+' '.join(counts)+']'
     return retstr
             
+
+
+def go_deep(node, row):
+    if len(node['children']) == 0 :
+        # this node is a leaf
+        return node['label']
+
+    attrname = node['decision_attr']['attrname']
+    attrvalue = row[attrname]
+    print attrname, attrvalue, node['children'].keys()
+    if node['decision_attr']['type'] == 'nominal':
+        # nominal
+        nextnode = node['children'][attrvalue]
+        return go_deep(nextnode, row)
+    else :
+        # numeric
+        nextnode = None
+        for k,v in node['children'].items():
+            choice_str = str(attrvalue) + k
+            choice = eval(choice_str)
+            if choice == True :
+                nextnode = v
+                break
+        return go_deep(nextnode, row)
+         
+def predict_a_row(tree, row):
+    "return a prediction for a row"
+    return go_deep(tree, row)
+
+
+
 if __name__ == '__main__':
     global g_levelinfo, g_attributes
 
@@ -460,25 +491,20 @@ if __name__ == '__main__':
     m = int(argv[3])
 
     fulltable = list(arff.load(datafile))
+    testtable = list(arff.load(testfile))
     fieldnames = get_fieldnames(fulltable)
     attributes = [x for x in fieldnames if x != 'class']
     levelinfo = fulltable[0].levelinfo
     g_levelinfo = levelinfo
     g_attributes = [x for x in fieldnames if x != 'class'] 
 
-    # for debug
-    #fulltable = [row for row in fulltable \
-                    #if row['thal'] == 'reversable_defect' and \
-                       #row['cp']   == 'non_anginal' and \
-                       #row['oldpeak'] < 1.9 and \
-                       #row['trestbps'] > 122.5 and \
-                       #row['chol'] <= 232.5]
-    #pretty_print(fulltable)
-    
     tree = id3(fulltable, attributes, 'class', m, 
                attr_order =attributes,
                levelinfo  =levelinfo)
     print
     print_tree(tree, 0, levelinfo)
+
+    #print go_deep(tree, testtable[0])
+    print predict_a_row(tree, testtable[0])
 
 
