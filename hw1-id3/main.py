@@ -449,8 +449,16 @@ def get_count_str(classcnt, levels):
 if __name__ == '__main__':
     global g_levelinfo, g_attributes
 
-    fulltable = list(arff.load('./heart_train.arff'))
-    #fulltable = list(arff.load('./diabetes_train.arff'))
+    argv = sys.argv
+
+    if len(argv) != 3 :
+        print 'Usage: python', argv[0], 'datafile m'
+        exit(1)
+
+    datafile = argv[1]
+    m = int(argv[2])
+
+    fulltable = list(arff.load(datafile))
     fieldnames = get_fieldnames(fulltable)
     attributes = [x for x in fieldnames if x != 'class']
     levelinfo = fulltable[0].levelinfo
@@ -466,11 +474,10 @@ if __name__ == '__main__':
                        #row['chol'] <= 232.5]
     #pretty_print(fulltable)
     
-    tree = id3(fulltable, attributes, 'class', 2, attr_order=attributes,
-                  levelinfo=levelinfo)
-    #pprint.pprint(tree)
-    #print attributes
+    tree = id3(fulltable, attributes, 'class', m, 
+               attr_order =attributes,
+               levelinfo  =levelinfo)
+    print
     print_tree(tree, 0, levelinfo)
-    #print levelinfo
 
 
