@@ -46,6 +46,9 @@ import pprint
 #
 #
 
+global g_levelinfo 
+global g_attributes
+
 def pretty_print(example_table):
     for row in example_table:
         itms = [str(x).ljust(15) for x in row]
@@ -111,28 +114,41 @@ def information_gain_nominal(example_table, attr):
         # no candidate split
         return None
 
+    if g_levelinfo.has_key(attr):
+        levels = g_levelinfo[attr]
+        #print levels,'--------------'
+    else :
+        levels = freqs.keys()
+
     Sum_right = 0
     #print freqs.keys()
-    for v in freqs.keys():
+    for v in levels:
         #print v
         subtable = subset_equal(example_table, attr, v)
         count_v = nrows(subtable)
-        Entropy_v = entropy(subtable)
-        Sum_right += (float(count_v)/float(counttotal)) * Entropy_v
+
+        if count_v == 0 :
+            Sum_right += 0
+        else :
+            Entropy_v = entropy(subtable)
+            Sum_right += (float(count_v)/float(counttotal)) * Entropy_v
         #print 'count_v',count_v, \
               #'counttotal', counttotal, \
               #'Entropy_v', Entropy_v, \
               #'Sum_right', Sum_right
     
     gain = Entropy_S - Sum_right
-    #print 'gain', gain
-    #print 'totalcount', counttotal, \
-          #'freqs', freqs
     return gain
 
 def information_gain_numeric(example_table, attr):
     split_dic = infogain_of_numeric_splits(example_table, attr)
-    print split_dic
+
+    if len(split_dic) == 0 :
+        return {'type': 'numeric',
+                'split': None,
+                'infogain': None}
+
+    #print split_dic
     splitlist = split_dic.keys()
     splitlist.sort()
 
@@ -263,7 +279,8 @@ def get_most_freq_item(dic, classlevels):
     for level in classlevels:
         if maxs.has_key(level):
             return maxs[level]
-    
+    print 'error in get_most_freq_item'
+    exit(1)
 
     #mymax = {'key': None,
              #'value': -float('inf')}
@@ -275,7 +292,7 @@ def get_most_freq_item(dic, classlevels):
     #return mymax
 
 def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
-    print '--------attributes', attributes, '----target_attr',target_attr
+    #print '--------attributes', attributes, '----target_attr',target_attr
     root = get_empty_node()
    
     classes = get_column(example_table, 'class')
@@ -304,12 +321,12 @@ def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
     for gain in infogains:
         if gain['infogain'] == maxgainval:
             maxgains[gain['attrname']]=gain
-    pprint.pprint(maxgains)
+    #pprint.pprint(maxgains)
     for attr in attr_order:
         if maxgains.has_key(attr):
             best_attr = maxgains[attr]
             break
-    print 'best:', best_attr
+    #print 'best:', best_attr
     
     # STOP criteria (iii) no feature has positive information gain
     if best_attr['infogain'] <= 0 :
@@ -337,8 +354,7 @@ def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
     # get subsets
     sublist = []
     if root['decision_attr']['type'] == 'nominal':
-        valueset = get_column_uniques(example_table, 
-                                  root['decision_attr']['attrname'])
+        valueset = g_levelinfo[root['decision_attr']['attrname']]
         for v in valueset:
             subexample = subset_equal(example_table, 
                                       root['decision_attr']['attrname'],   
@@ -359,11 +375,20 @@ def id3(example_table, attributes, target_attr, m, attr_order, levelinfo):
     for sub in sublist:
         branchname = sub.keys()[0]
         subexample = sub[branchname]
+        #if branchname == 'typ_angina':
+            #subcounter = Counter(get_column(example_table, 'class'))
+            #pretty_print( example_table )
+            #print 'mysubcounter', subcounter
+            #exit(1)
         if len(subexample) == 0 :
-            subcounter = Counter(get_column(subexample, 'class'))
-            commontarget = max(subcounter, key=lambda x:subcounter[x[0]])
+            #if branchname == 'typ_angina':
+                #print 'here'
+                #exit(1)
+            subcounter = Counter(get_column(example_table, 'class'))
+            commontarget = get_most_freq_item(subcounter, g_levelinfo['class'])['key']
+            #commontarget = max(subcounter, key=lambda x:subcounter[x[0]])
             leaf = get_empty_node()
-            leaf['class_count'] = subcounter
+            leaf['class_count'] = {} # empty
             leaf['label']      = commontarget
             root['children'][branchname] = leaf
         else :
@@ -419,16 +444,20 @@ def get_count_str(classcnt, levels):
     return retstr
             
 if __name__ == '__main__':
+    global g_levelinfo, g_attributes
+
     fulltable = list(arff.load('./heart_train.arff'))
     #fulltable = list(arff.load('./diabetes_train.arff'))
     fieldnames = get_fieldnames(fulltable)
     attributes = [x for x in fieldnames if x != 'class']
     levelinfo = fulltable[0].levelinfo
-    
-    tree = id3(fulltable, attributes, 'class', 20, attr_order=attributes,
+    g_levelinfo = levelinfo
+    g_attributes = [x for x in fieldnames if x != 'class'] 
+
+    tree = id3(fulltable, attributes, 'class', 4, attr_order=attributes,
                   levelinfo=levelinfo)
     #pprint.pprint(tree)
-    print attributes
+    #print attributes
     print_tree(tree, 0, levelinfo)
     #print levelinfo
 
