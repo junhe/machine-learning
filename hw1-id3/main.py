@@ -466,7 +466,7 @@ if __name__ == '__main__':
                        #row['chol'] <= 232.5]
     #pretty_print(fulltable)
     
-    tree = id3(fulltable, attributes, 'class', 4, attr_order=attributes,
+    tree = id3(fulltable, attributes, 'class', 2, attr_order=attributes,
                   levelinfo=levelinfo)
     #pprint.pprint(tree)
     #print attributes
