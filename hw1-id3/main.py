@@ -483,6 +483,23 @@ def predict_a_table(tree, test_table):
         pred = predict_a_row(tree, row)
         row.append('predicted_class', pred)
 
+
+def prediction_stats(table):
+    "must have column 'class' and 'predicted_class'"
+    n = 0
+    goodprediction = 0
+    for row in table:
+        n += 1
+        if row['class'] == row['predicted_class']:
+            goodprediction += 1
+    statstr = 'correctly classified: ' + str(goodprediction) + \
+            ' total instances: ' + str(n)
+    d = {'total':n,
+         'goodprediction':goodprediction,
+         'statstr':statstr}
+    return d
+
+
 if __name__ == '__main__':
     global g_levelinfo, g_attributes
 
@@ -516,5 +533,6 @@ if __name__ == '__main__':
     #pretty_print(smalltable)
     predict_a_table(tree, testtable)
     pretty_print(testtable)
+    print prediction_stats(testtable)['statstr']
 
 
