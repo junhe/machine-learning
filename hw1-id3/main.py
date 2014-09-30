@@ -50,8 +50,11 @@ global g_levelinfo
 global g_attributes
 
 def pretty_print(example_table):
+    width = 15
+    header = [x.ljust(width) for x in get_fieldnames(example_table)]
+    print ' '.join(header)
     for row in example_table:
-        itms = [str(x).ljust(15) for x in row]
+        itms = [str(x).ljust(width) for x in row]
         line = ' '.join(itms)
         print line
 
@@ -62,7 +65,7 @@ def get_fieldnames(example_table):
     if nrows(example_table) > 0 :
         return example_table[0].get_fieldnames()
     else:
-        return None
+        return []
 
 def get_fieldtype(example_table, attrname):
     if nrows(example_table) > 0 :
@@ -455,7 +458,7 @@ def go_deep(node, row):
 
     attrname = node['decision_attr']['attrname']
     attrvalue = row[attrname]
-    print attrname, attrvalue, node['children'].keys()
+    #print attrname, attrvalue, node['children'].keys()
     if node['decision_attr']['type'] == 'nominal':
         # nominal
         nextnode = node['children'][attrvalue]
@@ -475,7 +478,10 @@ def predict_a_row(tree, row):
     "return a prediction for a row"
     return go_deep(tree, row)
 
-
+def predict_a_table(tree, test_table):
+    for row in testtable:
+        pred = predict_a_row(tree, row)
+        row.append('predicted_class', pred)
 
 if __name__ == '__main__':
     global g_levelinfo, g_attributes
@@ -505,6 +511,8 @@ if __name__ == '__main__':
     print_tree(tree, 0, levelinfo)
 
     #print go_deep(tree, testtable[0])
-    print predict_a_row(tree, testtable[0])
+    smalltable = [testtable[i] for i in range(10)]
+    predict_a_table(tree, smalltable)
+    pretty_print(smalltable)
 
 

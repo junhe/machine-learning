@@ -106,7 +106,7 @@ def GenerateRowBase(field_names, fieldnumornom, fieldinfo):
             #for mytype in fieldinfo:
                 #attrlist.append(mytype.name)
             #self.attrlist = attrlist
-            self.fieldnames = field_names
+            self.fieldnames = [x for x in field_names]
             self.fieldnumornom = fieldnumornom
         def __getattr__(self, key):
             if key in self._data:
@@ -134,6 +134,16 @@ def GenerateRowBase(field_names, fieldnumornom, fieldinfo):
             self._data[attr] = value
 
         def del_attr(self, attr):
+            del self._data[attr]
+
+        def append(self, attr, value):
+            self.fieldnames.append(attr)
+            self._values.append(value)
+            self._data[attr] = value
+
+        def pop(self, attr):
+            self.fieldnames.pop()
+            self._values.pop()
             del self._data[attr]
 
     return Row
