@@ -129,6 +129,7 @@ if __name__ == '__main__':
     epochs = int(argv[4])
 
     fulltable = list(arff.load(datafile))
+    random.shuffle(fulltable)
     n = nrows(fulltable)
     setsize = (n+nfold-1)/nfold
     setlist = []
@@ -145,6 +146,7 @@ if __name__ == '__main__':
     # cross validation
 
     assert nfold == len(setlist), 'hello{nf}!={nset}'.format(nf=nfold,nset=len(setlist))
+    accuracylist = []
     for testid in range(nfold):
         train_sets = [id for id in range(nfold) if id != testid] 
         trainids = [id for i in train_sets for id in setlist[i]] 
@@ -154,10 +156,12 @@ if __name__ == '__main__':
        
         # train
         wlist = ann_train(traintable, lrate, epochs)
-        print wlist
         
         # test
-        ann_test(testtable, wlist)
+        accuracy = ann_test(testtable, wlist)
+        accuracylist.append(accuracy)
 
+    ave_accuracy = float(sum(accuracylist))/len(accuracylist)
+    print ave_accuracy
 
 
