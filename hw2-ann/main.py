@@ -175,30 +175,44 @@ if __name__ == '__main__':
     epochs = int(argv[4])
 
     fulltable = list(arff.load(datafile))
-    random.shuffle(fulltable)
-    n = nrows(fulltable)
-    setsize = (n+nfold-1)/nfold
-    setlist = []
-    assert setsize > 0
-    for i in range(n):
-        setindex = i/setsize
-        if setindex > len(setlist)-1:
-            # not in the list
-            setlist.append([i])
-        else:
-            setlist[setindex].append(i)
+    posset = [rowi for rowi,row in enumerate(fulltable) if row['Class'] == 'Mine']
+    #random.shuffle(posset)
+    negset = [rowi for rowi,row in enumerate(fulltable) if row['Class'] == 'Rock']
+    #random.shuffle(negset)
 
-    #ann_train(fulltable, lrate, epochs)
+    #print negset
+
+    npos = len(posset)
+    nneg = len(negset)
+    #print npos, nneg
+    
+    npos_per_part = (npos+nfold-1) / nfold
+    nneg_per_part = (nneg+nfold-1) / nfold
+
+    #print npos_per_part,nneg_per_part
+
+    partsets = [] # [ [set1], [set2], ... [setn] ]
+    for parti in range(nfold):
+        partsets.append([])
+        cnt = 0
+        while cnt < npos_per_part and len(posset) > 0:
+            partsets[parti].append( posset.pop() )
+            cnt += 1
+        cnt = 0
+        while cnt < nneg_per_part and len(negset) > 0:
+            partsets[parti].append( negset.pop() )
+            cnt += 1
+        random.shuffle(partsets[parti])
+
     # cross validation
-
-    assert nfold == len(setlist), 'hello{nf}!={nset}'.format(nf=nfold,nset=len(setlist))
+    assert nfold == len(partsets), 'hello{nf}!={nset}'.format(nf=nfold,nset=len(partsets))
     accuracylist = []
     for testid in range(nfold):
         train_sets = [id for id in range(nfold) if id != testid] 
-        trainids = [id for i in train_sets for id in setlist[i]] 
-
+        trainids   = [id for i in train_sets for id in partsets[i]] 
         traintable = [fulltable[i] for i in trainids]
-        testtable = [fulltable[i] for i in setlist[testid]]
+
+        testtable = [fulltable[i] for i in partsets[testid]]
        
         # train
         wlist = ann_train(traintable, lrate, epochs)
