@@ -103,7 +103,7 @@ def num2class(x):
     else:
         return 'Rock'
 
-def ann_test(datatable, wlist):
+def ann_test(datatable, wlist, rowids):
     outvec = []
     for row in datatable:
         outvec.append( get_output(row, wlist) )
@@ -115,12 +115,13 @@ def ann_test(datatable, wlist):
     accuracy = float(sum(comp))/len(comp)
     #print accuracy
     d = {'accuracy':accuracy,
+         'rowids'  :rowids,
          'numout'  :outvec,
          'classout':outvecclass,
          'correctclass':yvec}
     return d
 
-def roc_points(instances):
+def roc_points(instances, jobid):
     "instances are in the form of [(c,y),...]"
     # sort
     instances = sorted(instances, key=lambda x: x[0]) # sort by c 
@@ -154,12 +155,16 @@ def roc_points(instances):
     TPR = float(TP)/num_pos
     coords_list.append((FPR, TPR))
 
-    print 'x','y'
+    ret = []
     for x,y in coords_list:
-        print x,y
+        ret.append( {'x':x,'y':y,'jobid':jobid} )
+    return ret
 
-
-       
+def print_coords(coords):
+    print 'x','y','jobid'
+    for row in coords:
+        print row['x'],row['y'],row['jobid']
+    
 
 if __name__ == '__main__':
     argv = sys.argv
@@ -176,20 +181,13 @@ if __name__ == '__main__':
 
     fulltable = list(arff.load(datafile))
     posset = [rowi for rowi,row in enumerate(fulltable) if row['Class'] == 'Mine']
-    #random.shuffle(posset)
     negset = [rowi for rowi,row in enumerate(fulltable) if row['Class'] == 'Rock']
-    #random.shuffle(negset)
-
-    #print negset
 
     npos = len(posset)
     nneg = len(negset)
-    #print npos, nneg
     
     npos_per_part = (npos+nfold-1) / nfold
     nneg_per_part = (nneg+nfold-1) / nfold
-
-    #print npos_per_part,nneg_per_part
 
     partsets = [] # [ [set1], [set2], ... [setn] ]
     for parti in range(nfold):
@@ -207,6 +205,8 @@ if __name__ == '__main__':
     # cross validation
     assert nfold == len(partsets), 'hello{nf}!={nset}'.format(nf=nfold,nset=len(partsets))
     accuracylist = []
+    coords = []
+    resulttable = []
     for testid in range(nfold):
         train_sets = [id for id in range(nfold) if id != testid] 
         trainids   = [id for i in train_sets for id in partsets[i]] 
@@ -218,14 +218,34 @@ if __name__ == '__main__':
         wlist = ann_train(traintable, lrate, epochs)
         
         # test
-        testresult = ann_test(testtable, wlist)
+        testresult = ann_test(testtable, wlist, partsets[testid])
         accuracylist.append(testresult['accuracy'])
+
+        for i in range(len(testresult['rowids'])):
+            d = {'rowid'  :testresult['rowids'][i],
+                 'foldnum':testid,
+                 'predicted.class':testresult['classout'][i],
+                 'actual.class':testresult['correctclass'][i],
+                 'confidence':testresult['numout'][i]}
+            resulttable.append(d)
         
         c = testresult['numout']
         y = [classdic2[x] for x in testresult['correctclass']]
-        roc_points(zip(c,y))
+        coords.extend( roc_points(zip(c,y), testid) )
 
     ave_accuracy = float(sum(accuracylist))/len(accuracylist)
-    print ave_accuracy
+    #print ave_accuracy
+    #print_coords(coords)
+
+    colnames = [ 'rowid','foldnum','predicted.class','actual.class','confidence' ]
+    print ' '.join(colnames)
+    resulttable = sorted(resulttable, key=lambda row:row['rowid'])
+    for row in resulttable:
+        values = [str(row[k]) for k in colnames]
+        print ' '.join(values)
+        
+
+
+
 
 

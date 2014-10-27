@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <data-set-file> n l e" >&2
+    exit 1
+fi
+
+
+SRC_DIR=$(cd "$(dirname "$0")"; pwd)
+python ${SRC_DIR}/main.py $1 $2 $3 $4
